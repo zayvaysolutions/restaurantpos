@@ -6,7 +6,7 @@ import { CONFIG } from '../../constants/config';
 
 // EXACTAMENTE IGUAL que en el original
 const ProductModal = ({ isOpen, onClose, product }) => {
-    const { products, setProducts, categories } = useContext(AppContext);
+    const { categories, addProduct, updateProduct } = useContext(AppContext);
     const [formData, setFormData] = useState({
         name: '',
         price: '',
@@ -37,27 +37,27 @@ const ProductModal = ({ isOpen, onClose, product }) => {
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (product) {
-            setProducts(products.map(p =>
-                p.id === product.id
-                    ? { ...p, ...formData, price: parseFloat(formData.price), stock: parseInt(formData.stock) }
-                    : p
-            ));
-        } else {
-            const newProduct = {
-                id: Date.now(),
-                ...formData,
-                price: parseFloat(formData.price),
-                stock: parseInt(formData.stock),
-                deleted: false
-            };
-            setProducts([...products, newProduct]);
+        try {
+            if (product) {
+                await updateProduct(product.id, {
+                    ...formData,
+                    price: parseFloat(formData.price),
+                    stock: parseInt(formData.stock)
+                });
+            } else {
+                await addProduct({
+                    ...formData,
+                    price: parseFloat(formData.price),
+                    stock: parseInt(formData.stock)
+                });
+            }
+            onClose();
+        } catch (error) {
+            alert('Error al guardar el producto: ' + error.message);
         }
-
-        onClose();
     };
 
     return (
