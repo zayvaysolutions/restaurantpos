@@ -1,177 +1,125 @@
 import React, { useState, useContext } from 'react';
 import { AppContext } from '../../context/AppContext';
-import { Icons } from '../common/Icons';
-import { Button } from '../common/Button';
-import { Formatters } from '../../utils/Formatters';
-import ProductModal from './ProductModal';
 
-// EXACTAMENTE IGUAL que en el original
 const InventoryModule = () => {
-    const { products, categories, deleteProduct, restoreProduct } = useContext(AppContext);
-    const [showProductModal, setShowProductModal] = useState(false);
-    const [editingProduct, setEditingProduct] = useState(null);
-    const [showDeletedProducts, setShowDeletedProducts] = useState(false);
+    const { products, setProducts } = useContext(AppContext);
+    const [showForm, setShowForm] = useState(false);
+    const [editingId, setEditingId] = useState(null);
+    const [formData, setFormData] = useState({ name: '', price: '', stock: '' });
 
-    const handleDeleteProduct = async (productId) => {
-        if (confirm('¿Estás seguro de que deseas eliminar este producto? El producto se marcará como eliminado pero no se perderá el registro.')) {
-            try {
-                await deleteProduct(productId);
-            } catch (error) {
-                alert('Error al eliminar el producto: ' + error.message);
-            }
+    const handleEdit = (product) => {
+        setEditingId(product.id);
+        setFormData({ name: product.name, price: product.price, stock: product.stock });
+        setShowForm(true);
+    };
+
+    const handleDelete = (id) => {
+        if (window.confirm('¿Eliminar producto?')) {
+            setProducts(products.map(p => p.id === id ? { ...p, deleted: true } : p));
         }
     };
 
-    const handleRestoreProduct = async (productId) => {
-        if (confirm('¿Deseas restaurar este producto?')) {
-            try {
-                await restoreProduct(productId);
-            } catch (error) {
-                alert('Error al restaurar el producto: ' + error.message);
-            }
+    const handleSave = () => {
+        if (editingId) {
+            setProducts(products.map(p => 
+                p.id === editingId ? { ...p, ...formData, price: parseFloat(formData.price), stock: parseInt(formData.stock) } : p
+            ));
+        } else {
+            setProducts([...products, {
+                id: Date.now(),
+                ...formData,
+                price: parseFloat(formData.price),
+                stock: parseInt(formData.stock),
+                emoji: '📦',
+                category: 'General',
+                deleted: false
+            }]);
         }
+        setShowForm(false);
+        setEditingId(null);
+        setFormData({ name: '', price: '', stock: '' });
     };
 
-    const handlePermanentDelete = async (productId) => {
-        if (confirm('⚠️ ADVERTENCIA: Esto eliminará permanentemente el producto. Esta acción no se puede deshacer. ¿Continuar?')) {
-            try {
-                await deleteProduct(productId);
-            } catch (error) {
-                alert('Error al eliminar el producto: ' + error.message);
-            }
-        }
-    };
-
-    const displayProducts = showDeletedProducts 
-        ? products.filter(p => p.deleted) 
-        : products.filter(p => !p.deleted);
+    const activeProducts = products.filter(p => !p.deleted);
 
     return (
-        <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <h2 className="text-xl sm:text-2xl font-bold">Gestión de Inventario</h2>
-                    <div className="flex gap-2 flex-wrap">
-                        <Button
-                            variant={showDeletedProducts ? "secondary" : "info"}
-                            onClick={() => setShowDeletedProducts(!showDeletedProducts)}
-                            icon={<Icons.Archive size={20} />}
-                        >
-                            {showDeletedProducts ? 'Ver Activos' : 'Ver Eliminados'}
-                        </Button>
-                        <Button
-                            variant="primary"
-                            onClick={() => {
-                                setEditingProduct(null);
-                                setShowProductModal(true);
-                            }}
-                            icon={<Icons.Plus size={20} />}
-                        >
-                            Nuevo Producto
-                        </Button>
-                    </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="border-b">
-                                <th className="text-left py-3 px-2">Producto</th>
-                                <th className="text-left py-3 px-2">Categoría</th>
-                                <th className="text-right py-3 px-2">Precio</th>
-                                <th className="text-right py-3 px-2">Stock</th>
-                                <th className="text-center py-3 px-2">Estado</th>
-                                <th className="text-center py-3 px-2">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {displayProducts.length === 0 ? (
-                                <tr>
-                                    <td colSpan="6" className="text-center py-8 text-gray-500">
-                                        {showDeletedProducts ? 'No hay productos eliminados' : 'No hay productos'}
-                                    </td>
-                                </tr>
-                            ) : (
-                                displayProducts.map(product => (
-                                    <tr key={product.id} className="border-b hover:bg-gray-50">
-                                        <td className="py-3 px-2">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-2xl">{product.emoji}</span>
-                                                <span className="font-medium">{product.name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="py-3 px-2">{product.category}</td>
-                                        <td className="py-3 px-2 text-right font-semibold">{Formatters.currency(product.price)}</td>
-                                        <td className="py-3 px-2 text-right">
-                                            <span className={product.stock < 5 ? 'text-red-600 font-semibold' : ''}>
-                                                {product.stock}
-                                            </span>
-                                        </td>
-                                        <td className="py-3 px-2 text-center">
-                                            {product.deleted ? (
-                                                <span className="badge-deleted">Eliminado</span>
-                                            ) : (
-                                                <span className="badge-active">Activo</span>
-                                            )}
-                                        </td>
-                                        <td className="py-3 px-2">
-                                            <div className="flex justify-center gap-2">
-                                                {!product.deleted ? (
-                                                    <>
-                                                        <button
-                                                            onClick={() => {
-                                                                setEditingProduct(product);
-                                                                setShowProductModal(true);
-                                                            }}
-                                                            className="touch-target p-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200"
-                                                            title="Editar"
-                                                        >
-                                                            <Icons.Edit size={16} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteProduct(product.id)}
-                                                            className="touch-target p-2 bg-red-100 text-red-600 rounded hover:bg-red-200"
-                                                            title="Eliminar"
-                                                        >
-                                                            <Icons.Trash size={16} />
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <button
-                                                            onClick={() => handleRestoreProduct(product.id)}
-                                                            className="touch-target p-2 bg-green-100 text-green-600 rounded hover:bg-green-200"
-                                                            title="Restaurar"
-                                                        >
-                                                            <Icons.RefreshCw size={16} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handlePermanentDelete(product.id)}
-                                                            className="touch-target p-2 bg-red-100 text-red-600 rounded hover:bg-red-200"
-                                                            title="Eliminar Permanentemente"
-                                                        >
-                                                            <Icons.X size={16} />
-                                                        </button>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+        <div className="p-4">
+            <div className="flex justify-between mb-4">
+                <h2 className="text-2xl font-bold">Inventario</h2>
+                <button 
+                    onClick={() => {
+                        setEditingId(null);
+                        setFormData({ name: '', price: '', stock: '' });
+                        setShowForm(true);
+                    }}
+                    className="bg-orange-500 text-white px-4 py-2 rounded"
+                >
+                    + Nuevo
+                </button>
             </div>
 
-            <ProductModal
-                isOpen={showProductModal}
-                onClose={() => {
-                    setShowProductModal(false);
-                    setEditingProduct(null);
-                }}
-                product={editingProduct}
-            />
+            {showForm && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="bg-white p-6 rounded-lg w-96">
+                        <h3 className="text-xl font-bold mb-4">
+                            {editingId ? 'Editar' : 'Nuevo'} Producto
+                        </h3>
+                        <input
+                            type="text"
+                            placeholder="Nombre"
+                            value={formData.name}
+                            onChange={e => setFormData({...formData, name: e.target.value})}
+                            className="w-full p-2 border mb-2 rounded"
+                        />
+                        <input
+                            type="number"
+                            placeholder="Precio"
+                            value={formData.price}
+                            onChange={e => setFormData({...formData, price: e.target.value})}
+                            className="w-full p-2 border mb-2 rounded"
+                        />
+                        <input
+                            type="number"
+                            placeholder="Stock"
+                            value={formData.stock}
+                            onChange={e => setFormData({...formData, stock: e.target.value})}
+                            className="w-full p-2 border mb-2 rounded"
+                        />
+                        <div className="flex gap-2">
+                            <button onClick={handleSave} className="flex-1 bg-green-500 text-white p-2 rounded">
+                                Guardar
+                            </button>
+                            <button onClick={() => setShowForm(false)} className="flex-1 bg-gray-500 text-white p-2 rounded">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <table className="w-full">
+                <thead>
+                    <tr className="border-b">
+                        <th className="text-left py-2">Nombre</th>
+                        <th className="text-right">Precio</th>
+                        <th className="text-right">Stock</th>
+                        <th className="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {activeProducts.map(p => (
+                        <tr key={p.id} className="border-b">
+                            <td className="py-2">{p.name}</td>
+                            <td className="text-right">${p.price}</td>
+                            <td className="text-right">{p.stock}</td>
+                            <td className="text-center">
+                                <button onClick={() => handleEdit(p)} className="text-blue-600 mr-2">✏️</button>
+                                <button onClick={() => handleDelete(p.id)} className="text-red-600">🗑️</button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
     );
 };
