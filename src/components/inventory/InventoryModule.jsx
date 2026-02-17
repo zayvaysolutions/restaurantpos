@@ -7,30 +7,38 @@ import ProductModal from './ProductModal';
 
 // EXACTAMENTE IGUAL que en el original
 const InventoryModule = () => {
-    const { products, setProducts, categories } = useContext(AppContext);
+    const { products, categories, deleteProduct, restoreProduct } = useContext(AppContext);
     const [showProductModal, setShowProductModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
     const [showDeletedProducts, setShowDeletedProducts] = useState(false);
 
-    const handleDeleteProduct = (productId) => {
+    const handleDeleteProduct = async (productId) => {
         if (confirm('¿Estás seguro de que deseas eliminar este producto? El producto se marcará como eliminado pero no se perderá el registro.')) {
-            setProducts(products.map(p => 
-                p.id === productId ? { ...p, deleted: true, deletedAt: new Date().toISOString() } : p
-            ));
+            try {
+                await deleteProduct(productId);
+            } catch (error) {
+                alert('Error al eliminar el producto: ' + error.message);
+            }
         }
     };
 
-    const handleRestoreProduct = (productId) => {
+    const handleRestoreProduct = async (productId) => {
         if (confirm('¿Deseas restaurar este producto?')) {
-            setProducts(products.map(p => 
-                p.id === productId ? { ...p, deleted: false, deletedAt: null } : p
-            ));
+            try {
+                await restoreProduct(productId);
+            } catch (error) {
+                alert('Error al restaurar el producto: ' + error.message);
+            }
         }
     };
 
-    const handlePermanentDelete = (productId) => {
+    const handlePermanentDelete = async (productId) => {
         if (confirm('⚠️ ADVERTENCIA: Esto eliminará permanentemente el producto. Esta acción no se puede deshacer. ¿Continuar?')) {
-            setProducts(products.filter(p => p.id !== productId));
+            try {
+                await deleteProduct(productId);
+            } catch (error) {
+                alert('Error al eliminar el producto: ' + error.message);
+            }
         }
     };
 
