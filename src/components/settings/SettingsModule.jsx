@@ -1,4 +1,4 @@
-import React, { useState, useContext, useRef } from 'react';
+	import React, { useState, useContext, useRef } from 'react';
 import { AppContext } from '../../context/AppContext';
 import { Icons } from '../common/Icons';
 import { Button } from '../common/Button';
@@ -11,9 +11,10 @@ const SettingsModule = () => {
         businessName, setBusinessName, 
         businessLogo, setBusinessLogo,
         logoType, setLogoType,
-        categories, setCategories,
-        products, setProducts,
-        users, setUsers,
+        categories, addCategory, removeCategory,
+        products, updateProduct,
+        users,
+        deleteUser,
         currentUser,
         exportData, importData
     } = useContext(AppContext);
@@ -23,40 +24,55 @@ const SettingsModule = () => {
     const [editingUser, setEditingUser] = useState(null);
     const fileInputRef = useRef(null);
 
-    const handleAddCategory = () => {
+    const handleAddCategory = async () => {
         if (newCategory.trim() && !categories.includes(newCategory.trim())) {
-            const updatedCategories = [...categories, newCategory.trim()];
-            setCategories(updatedCategories);
-            setNewCategory('');
+            try {
+                await addCategory(newCategory.trim());
+                setNewCategory('');
+            } catch (error) {
+                alert('Error al agregar categoría: ' + error.message);
+            }
         }
     };
 
-    const handleRemoveCategory = (category) => {
+    const handleRemoveCategory = async (category) => {
         if (confirm(`¿Eliminar la categoría "${category}"?`)) {
             const productsInCategory = products.filter(p => p.category === category);
             
             if (productsInCategory.length > 0) {
                 const defaultCategory = categories.filter(c => c !== category)[0] || 'Sin Categoría';
                 if (confirm(`Hay ${productsInCategory.length} producto(s) en esta categoría. Se moverán a "${defaultCategory}". ¿Continuar?`)) {
-                    setProducts(products.map(p => 
-                        p.category === category ? { ...p, category: defaultCategory } : p
-                    ));
-                    setCategories(categories.filter(c => c !== category));
+                    try {
+                        for (const p of productsInCategory) {
+                            await updateProduct(p.id, { ...p, category: defaultCategory });
+                        }
+                        await removeCategory(category);
+                    } catch (error) {
+                        alert('Error al eliminar categoría: ' + error.message);
+                    }
                 }
             } else {
-                setCategories(categories.filter(c => c !== category));
+                try {
+                    await removeCategory(category);
+                } catch (error) {
+                    alert('Error al eliminar categoría: ' + error.message);
+                }
             }
         }
     };
 
-    const handleDeleteUser = (userId) => {
+    const handleDeleteUser = async (userId) => {
         if (userId === currentUser?.id) {
             alert('No puedes eliminar tu propio usuario');
             return;
         }
 
         if (confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
-            setUsers(users.filter(u => u.id !== userId));
+            try {
+                await deleteUser(userId);
+            } catch (error) {
+                alert('Error al eliminar usuario: ' + error.message);
+            }
         }
     };
 
