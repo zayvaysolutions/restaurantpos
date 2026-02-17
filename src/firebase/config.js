@@ -1,20 +1,25 @@
-// src/firebase/config.js
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
-// IMPORTANTE: Reemplaza con tus propias credenciales de Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyAbYxuLKGsNVktHRWonXBWqHJHx0Oi0loA",
-  authDomain: "restaurantpos-multi.firebaseapp.com",
-  projectId: "restaurantpos-multi",
-  storageBucket: "restaurantpos-multi.firebasestorage.app",
-  messagingSenderId: "13033221224",
-  appId: "1:13033221224:web:375fda406b42b2472cdfdd",
-  measurementId: "G-SCQMDK5H4L"
+  apiKey: process.env.REACT_APP_API_KEY,
+  authDomain: process.env.REACT_APP_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_APP_ID,
+  measurementId: process.env.REACT_APP_MEASUREMENT_ID
 };
 
-// Inicializar Firebase
+// Verificar que las variables existen (solo en desarrollo)
+if (process.env.NODE_ENV === 'development') {
+  console.log('Firebase Config:', {
+    projectId: firebaseConfig.projectId,
+    authDomain: firebaseConfig.authDomain
+  });
+}
+
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);

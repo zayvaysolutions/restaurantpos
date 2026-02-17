@@ -24,7 +24,7 @@ export const productService = {
     );
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ 
-      id: parseInt(doc.id), 
+      id: doc.id, 
       ...doc.data() 
     }));
   },
@@ -36,7 +36,7 @@ export const productService = {
       where('deleted', '==', true)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: parseInt(doc.id), ...doc.data() }));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   },
 
   // Crear producto
@@ -47,7 +47,7 @@ export const productService = {
       createdAt: Timestamp.now()
     };
     const docRef = await addDoc(collection(db, 'products'), newProduct);
-    return { id: parseInt(docRef.id), ...newProduct };
+    return { id: docRef.id, ...newProduct };
   },
 
   // Actualizar producto
@@ -88,7 +88,7 @@ export const saleService = {
     );
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ 
-      id: parseInt(doc.id), 
+      id: doc.id, 
       ...doc.data() 
     }));
   },
@@ -101,7 +101,7 @@ export const saleService = {
       createdAt: Timestamp.now()
     };
     const docRef = await addDoc(collection(db, 'sales'), newSale);
-    return { id: parseInt(docRef.id), ...newSale };
+    return { id: docRef.id, ...newSale };
   },
 
   // Anular venta
@@ -143,7 +143,7 @@ export const userService = {
   getAll: async () => {
     const snapshot = await getDocs(collection(db, 'users'));
     return snapshot.docs.map(doc => ({ 
-      id: parseInt(doc.id), 
+      id: doc.id, 
       ...doc.data() 
     }));
   },
@@ -154,7 +154,7 @@ export const userService = {
       createdAt: Timestamp.now()
     };
     const docRef = await addDoc(collection(db, 'users'), newUser);
-    return { id: parseInt(docRef.id), ...newUser };
+    return { id: docRef.id, ...newUser };
   },
 
   update: async (userId, userData) => {

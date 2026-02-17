@@ -5,7 +5,7 @@ import { Button } from '../common/Button';
 
 // EXACTAMENTE IGUAL que en el original
 const UserModal = ({ isOpen, onClose, user }) => {
-    const { users, setUsers } = useContext(AppContext);
+    const { users, addUser, updateUser } = useContext(AppContext);
     const [formData, setFormData] = useState({
         username: '',
         password: '',
@@ -33,7 +33,7 @@ const UserModal = ({ isOpen, onClose, user }) => {
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!formData.username || !formData.password || !formData.name) {
@@ -46,21 +46,16 @@ const UserModal = ({ isOpen, onClose, user }) => {
             return;
         }
 
-        if (user) {
-            setUsers(users.map(u =>
-                u.id === user.id
-                    ? { ...u, ...formData }
-                    : u
-            ));
-        } else {
-            const newUser = {
-                id: Date.now(),
-                ...formData
-            };
-            setUsers([...users, newUser]);
+        try {
+            if (user) {
+                await updateUser(user.id, { ...formData });
+            } else {
+                await addUser({ ...formData });
+            }
+            onClose();
+        } catch (error) {
+            alert('Error al guardar usuario: ' + error.message);
         }
-
-        onClose();
     };
 
     return (

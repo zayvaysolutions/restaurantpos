@@ -6,7 +6,7 @@ import { Formatters } from '../../utils/Formatters';
 
 // EXACTAMENTE IGUAL que en el original
 const ReportsModule = () => {
-    const { sales, setSales, products, setProducts, currentUser } = useContext(AppContext);
+    const { sales, products, currentUser, cancelSale, updateProduct } = useContext(AppContext);
     const [dateFilter, setDateFilter] = useState('today');
     const [showCancelled, setShowCancelled] = useState(false);
     const [selectedSale, setSelectedSale] = useState(null);
@@ -49,33 +49,35 @@ const ReportsModule = () => {
         setShowCancelModal(true);
     };
 
-    const confirmCancelSale = () => {
+    const confirmCancelSale = async () => {
         if (selectedSale) {
-            setSales(sales.map(s => 
-                s.id === selectedSale.id 
-                    ? { 
-                        ...s, 
-                        cancelled: true, 
-                        cancelledAt: new Date().toISOString(), 
-                        cancelledBy: currentUser?.name,
-                        cancellationReason: 'Anulación manual',
-                        originalTotal: s.total,
-                        cancelledTotal: 0
+            try {
+                const cancellationData = {
+                    cancelledAt: new Date().toISOString(),
+                    cancelledBy: currentUser?.name,
+                    cancellationReason: 'Anulación manual',
+                    originalTotal: selectedSale.total,
+                    cancelledTotal: 0
+                };
+
+                await cancelSale(selectedSale.id, cancellationData);
+
+                for (const item of selectedSale.items) {
+                    const product = products.find(p => p.id === item.id);
+                    if (product) {
+                        await updateProduct(item.id, {
+                            ...product,
+                            stock: product.stock + item.quantity
+                        });
                     }
-                    : s
-            ));
+                }
 
-            selectedSale.items.forEach(item => {
-                setProducts(products.map(p =>
-                    p.id === item.id
-                        ? { ...p, stock: p.stock + item.quantity }
-                        : p
-                ));
-            });
-
-            alert('Venta anulada exitosamente. El stock ha sido restaurado.');
-            setShowCancelModal(false);
-            setSelectedSale(null);
+                alert('Venta anulada exitosamente. El stock ha sido restaurado.');
+                setShowCancelModal(false);
+                setSelectedSale(null);
+            } catch (error) {
+                alert('Error al anular la venta: ' + error.message);
+            }
         }
     };
 
